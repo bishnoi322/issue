@@ -1,0 +1,79 @@
+import sqlite3
+
+class Database:
+    def __init__(self, name):
+        self._conn = sqlite3.connect(name)
+        self._cursor = self._conn.cursor()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    @property
+    def connection(self):
+        return self._conn
+
+    @property
+    def cursor(self):
+        return self._cursor
+
+    def commit(self):
+        self.connection.commit()
+
+    def close(self, commit=True):
+        if commit:
+            self.commit()
+        self.connection.close()
+
+    def execute(self, sql, params=None):
+        self.cursor.execute(sql, params or ())
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    def query(self, sql, params=None):
+        self.execute(sql, params)
+        return self.fetchall()
+
+with Database('database_name') as db:
+    db.execute('''CREATE TABLE IF NOT EXISTS stock_price_table(
+                    date DATE,
+                    symbol TEXT,
+                    closing_price FLOAT
+                )''')
+   
+
+    closing_prices = db.query('''SELECT date, closing_price FROM stock_price_table''')
+    print(closing_prices)
+
+import statistics
+import numpy as np
+
+def central_tendency(closing_prices):
+    
+    prices = [price for _, price in closing_prices]
+
+
+    mean = np.mean(prices)
+
+
+    median = np.median(prices)
+
+  
+    try:
+        mode = statistics.mode(prices)
+    except statistics.StatisticsError:
+        mode = None  
+
+    return mean, median, mode
+
+    
+    mean, median, mode = central_tendency(closing_prices)
+    print("Mean:", mean)
+    print("Median:", median)
+    print("Mode:", mode)
+
+
+
